@@ -24,3 +24,4 @@ AddEventHandler('onResourceStart', function (resource)
 	loadHooks()
 end)
 
+lib.versionCheck('Maximus7474/mps-ox-invhooks')
