@@ -3,7 +3,9 @@ Hooks = Hooks or {}
 -- Config values
 
 -- the string identifier to determine a stash is a freezer
-local freezerPattern = "freezer"
+local freezerPatterns = {
+	"freezer"
+}
 
 -- Business end
 
@@ -28,8 +30,8 @@ Hooks.Freezer = function ()
 	---@return boolean
 	function (payload)
 		-- boolean values
-		local toFreezer = type(payload.toInventory) == "string" and type(payload.toInventory:match(freezerPattern)) == "string"
-		local fromFreezer = type(payload.fromInventory) == "string" and type(payload.fromInventory:match(freezerPattern)) == "string"
+		local toFreezer = SatisfiesPatterns(payload.toInventory, freezerPatterns)
+		local fromFreezer = SatisfiesPatterns(payload.fromInventory, freezerPatterns)
 
 		-- indicates that the items stayed in the originating inventory
 		if toFreezer == fromFreezer then
@@ -68,9 +70,7 @@ Hooks.Freezer = function ()
 
 		return true
 	end, {
-		inventoryFilter = {
-			freezerPattern,
-		}
+		inventoryFilter = freezerPatterns,
 	})
 
 	lib.print.info('Initialized Freezer inventory hook')

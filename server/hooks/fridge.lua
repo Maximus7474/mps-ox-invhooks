@@ -3,7 +3,9 @@ Hooks = Hooks or {}
 -- Config values
 
 -- the string identifier to determine a stash is a fridge
-local fridgePattern = "fridge"
+local fridgePatterns = {
+	"fridge"
+}
 -- 2 means that the time left until it degrades is twice as long
 local durabilityIncrease = 2
 
@@ -30,8 +32,8 @@ Hooks.Fridge = function ()
 	---@return boolean
 	function (payload)
 		-- boolean values
-		local toFridge = type(payload.toInventory) == "string" and type(payload.toInventory:match(fridgePattern)) == "string"
-		local fromFridge = type(payload.fromInventory) == "string" and type(payload.fromInventory:match(fridgePattern)) == "string"
+		local toFridge = SatisfiesPatterns(payload.toInventory, fridgePatterns)
+		local fromFridge = SatisfiesPatterns(payload.fromInventory, fridgePatterns)
 
 		-- indicates that the items stayed in the originating inventory
 		if toFridge == fromFridge then
@@ -78,9 +80,7 @@ Hooks.Fridge = function ()
 
 		return true
 	end, {
-		inventoryFilter = {
-			fridgePattern,
-		}
+		inventoryFilter = fridgePatterns,
 	})
 
 	lib.print.info('Initialized Fridge inventory hook')
