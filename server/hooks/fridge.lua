@@ -26,62 +26,85 @@ local function hasDegrade(itemname)
 	return cache[itemname]
 end
 
+---helper func to get updated metadata
+---@param item OxItem
+---@param toFridge boolean is item moved to a fridge
+---@return nil | table newMeta nil if not applicable by hook logic
+local function getUpdatedMetadata(item, toFridge)
+    local degradeable = hasDegrade(item.name)
+    if not degradeable or not item.metadata.durability or item.metadata.durability == 0 then
+        return nil
+    end
+
+    local currentTime = os.time()
+    local secondsLeft = item.metadata.durability - currentTime
+    if secondsLeft <= 0 then return nil end
+
+    local newMeta = table.clone(item.metadata)
+
+    if toFridge then
+        newMeta.degrade = degradeable.degrade * durabilityIncrease
+        newMeta.durability = math.floor(currentTime + (secondsLeft * durabilityIncrease))
+    else
+        newMeta.degrade = degradeable.degrade
+        newMeta.durability = math.floor(currentTime + (secondsLeft / durabilityIncrease))
+    end
+
+    return newMeta
+end
+
+---main logic for handling item meta updating
+---@param payload SwapItemsPayload
+---@return nil | string | number | table inventoryId
+---@return nil | number slotId
+---@return nil | table newMeta
+local function handleFridgeLogic(payload)
+    local toFridge = SatisfiesPatterns(payload.toInventory, fridgePatterns)
+    local fromFridge = SatisfiesPatterns(payload.fromInventory, fridgePatterns)
+
+    if toFridge == fromFridge then return nil, nil, nil end
+
+    local newMeta = getUpdatedMetadata(payload.fromSlot, toFridge)
+    if not newMeta then return nil, nil, nil end
+
+    local slotId = type(payload.toSlot) == "number" and payload.toSlot or payload.toSlot.slot --[[ @as number ]]
+    return payload.toInventory, slotId, newMeta
+end
+
+---@param payload SwapItemsPayload
+local function unidealHookCb(payload)
+    local inv, slot, meta = handleFridgeLogic(payload)
+    if not inv or not slot or not meta then return true end
+
+    Citizen.SetTimeout(100, function()
+        exports.ox_inventory:SetMetadata(inv, slot, meta)
+    end)
+
+    return true
+end
+
+---@param success boolean
+---@param payload SwapItemsPayload
+local function idealHookCb(success, payload)
+    if not success then return end
+
+    local inv, slot, meta = handleFridgeLogic(payload)
+    if not inv or not slot or not meta then return true end
+
+    exports.ox_inventory:SetMetadata(inv, slot, meta)
+end
+
 Hooks.Fridge = function ()
-	exports.ox_inventory:registerHook('swapItems',
-	---@param payload SwapItemsPayload
-	---@return boolean
-	function (payload)
-		-- boolean values
-		local toFridge = SatisfiesPatterns(payload.toInventory, fridgePatterns)
-		local fromFridge = SatisfiesPatterns(payload.fromInventory, fridgePatterns)
+    local useIdeal = IsInventoryMinimumVersion()
+    local before, after
 
-		-- indicates that the items stayed in the originating inventory
-		if toFridge == fromFridge then
-			return true
-		end
+    if useIdeal then
+        after = idealHookCb
+    else
+        before = unidealHookCb
+    end
 
-		local item = payload.fromSlot
-		local degradeable = hasDegrade(item.name)
-
-		if not degradeable or item.metadata.durability == 0 then return true end
-
-		local currentTime = os.time()
-		local secondsLeft = item.metadata.durability - currentTime
-		if secondsLeft <= 0 then return true end
-
-
-		local inventory = payload.toInventory
-		local slotId = type(payload.toSlot) == "number" and payload.toSlot or payload.toSlot.slot --[[ @as number ]]
-
-		local newDegrade = toFridge and (
-			degradeable.degrade * durabilityIncrease
-		) or (
-			degradeable.degrade
-		)
-
-		local newDurability = math.floor(currentTime + (
-			toFridge and (
-				secondsLeft * durabilityIncrease
-			) or (
-				secondsLeft / durabilityIncrease
-			)
-		))
-
-		Citizen.SetTimeout(100, function ()
-			local newMeta = item.metadata
-
-			newMeta.degrade = newDegrade
-			newMeta.durability = newDurability
-
-			exports.ox_inventory:SetMetadata(
-				inventory, slotId, newMeta
-			)
-		end)
-
-		return true
-	end, {
-		inventoryFilter = fridgePatterns,
-	})
+    RegisterHookAction('swapItems', before, after, fridgePatterns)
 
 	lib.print.info('Initialized Fridge inventory hook')
 end
