@@ -63,7 +63,7 @@ function IsInventoryMinimumVersion()
     if minor > 46 then return true end
     if minor < 46 then return false end
 
-    return patch >= 2
+    return patch > 1
 end
 
 if not IsInventoryMinimumVersion() then
