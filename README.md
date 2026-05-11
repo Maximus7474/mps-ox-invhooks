@@ -2,6 +2,10 @@
 
 A collection of server-side hooks that modify item behavior during inventory transfers within `ox_inventory`.
 
+> [!IMPORTANT]
+> This script will work best with `v2.46.2` of ox_inventory (when released), as it provides a more reliable method in acting on the item's metadata.
+> No changes will need to be made to this script, it'll detect if using the appropriate version and act accordingly.
+
 ## Hooks:
 
 <details>
