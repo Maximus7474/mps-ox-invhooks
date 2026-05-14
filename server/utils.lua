@@ -65,5 +65,5 @@ end
 
 if not IsInventoryMinimumVersion() then
     lib.print.warn('Invalid ox_inventory version!')
-    lib.print.warn('Update to v2.46.2+ ASAP to avoid conflicts.')
+    lib.print.warn('Update to v2.47.0+ ASAP to avoid conflicts.')
 end
