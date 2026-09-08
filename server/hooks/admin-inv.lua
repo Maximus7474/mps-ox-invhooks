@@ -96,6 +96,14 @@ local function idealHandlePostSwap(success, payload)
 	-- no swapping
 	if payload.action == 'swap' then return end
 
+	-- check that from inv is an admin inv
+	if not lib.table.contains(openInventories, payload.fromInventory) then return end
+
+	if not canUseAdminInv(payload.source) then return end
+
+	-- this should only trigger when the target inventory is the players
+	if payload.toInventory ~= payload.source then return end
+
 	local src = payload.source
 	local count = payload.count
 	local item = payload.fromSlot
