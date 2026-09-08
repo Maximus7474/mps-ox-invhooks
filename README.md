@@ -43,8 +43,8 @@ The Freezer Hook effectively "pauses" the degradation process entirely.
 
 Because `ox_inventory` uses active timestamps for durability, the freezer hook converts the dynamic timestamp into a static percentage value (0–100) and removes the `degrade` metadata. This stops the "countdown."
 
-* **Entering Freezer:** Timestamp $\rightarrow$ Static Percentage (e.g., 65%).
-* **Exiting Freezer:** Static Percentage $\rightarrow$ New Expiry Timestamp based on the current time.
+* **Entering Freezer:** Timestamp -> Static Percentage (e.g., 65%).
+* **Exiting Freezer:** Static Percentage -> New Expiry Timestamp based on the current time.
 
 ### Configuration
 
@@ -91,6 +91,27 @@ When opening the inventory in a vehicle with a glovebox, the `openInventory` hoo
 
 ### Limitations
 * Players can not access their inventory if they can't access the glovebox.
+
+</details>
+<details>
+<summary>Item Lock Hook: bind items to specific players</summary><br/>
+
+The Item Lock hook prevents players from trading, giving away, or dropping items that are permanently bound to their character's identifier.
+
+### How it works
+
+Because `ox_inventory` handles item movement globally, this hook intercepts `swapItems` actions and checks the item's metadata for an owner identifier. If an item is locked, it strictly limits where the item can be moved.
+
+* **Player -> Drop:** Blocked. Prevents dropping locked items on the ground to give to others.
+* **Player -> Player:** Blocked. Prevents trading, giving, or stealing locked items.
+* **Player -> Stash:** Allowed (configurable). Allows the owner to store their locked items in non-player inventories (trunks, stashes).
+* **Admin Override:** Staff with the configured ace permissions bypass all movement restrictions.
+
+### Configuration
+
+* **Metadata Key:** Set `OWNER_META_KEY` to dictate which metadata field defines ownership (default: `'owner_identifier'`).
+* **Stash Storage:** Toggle the `ALLOW_STASHES` boolean to control whether players can place locked items into non-player containers.
+* **Admin Permissions:** Adjust `ADMIN_ACE_PERMS` to define which server ace groups can bypass the item locks (default: `'hooks:admininv'`).
 
 </details>
 
