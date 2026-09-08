@@ -48,14 +48,13 @@ local function handleItemSwap(payload)
 
 	if not isItemLocked(payload.fromSlot) then return true end
 	-- commented during testing
-	-- if isAdmin(payload.source) then return true end
+	if isAdmin(payload.source) then return true end
 
 	lib.print.info('same inventory:', payload.fromInventory == payload.toInventory)
 	-- allow moving within same inventory
 	if payload.fromInventory == payload.toInventory then return true end
 
 	lib.print.info('moving to drop:', payload.toType == 'drop')
-	-- WARNING: duplication issue with this logic !!!!
 	-- deny placing item in a drop (admins can, but only admin & target player can pick up)
 	if payload.toType == 'drop' then return false end
 
@@ -84,19 +83,3 @@ Hooks.ItemLock = function ()
 
     lib.print.info('Initialized ItemLock inventory hook')
 end
-
--- benchmark for isolating the bug
--- Hooks.ItemLock = function ()
--- 	exports.ox_inventory:registerHook('swapItems', function(payload)
--- 	   	lib.print.info('swapItems', { toType = payload.toType, fromType = payload.fromType })
-
--- 	   	return false
--- 	end)
-
--- 	local hookId = exports.ox_inventory:registerHook('createItem')
--- 	AddEventHandler(hookId, function(success, payload)
--- 	   	lib.print.info('New item created:', success, payload)
--- 	end)
-
--- 	lib.print.info('Initialized ItemLock inventory hook')
--- end
